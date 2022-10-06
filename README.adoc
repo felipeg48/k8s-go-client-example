@@ -1,0 +1,59 @@
+= K8s Go Client Example
+
+== Client
+
+- https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration[^]
+
+== K8s - Debugger
+
+[source,shell]
+----
+sed -i.bak 's|'{GOPATH}'|'${GOPATH}'|g' k8s/config.yml
+kind create cluster --config k8s/config.yml --name=local-debug-k8s
+kubectl cluster-info --context kind-local-debug-k8s
+kubectl create -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml
+
+
+kubectl label nodes local-debug-k8s-worker debug=true
+
+docker build -t debug-k8s ./Dockerfile
+
+kind load docker-image debug-k8s:latest --name=local-debug-k8s --nodes=local-debug-k8s-worker
+
+kubectl create -f k8s/persistent-volume.yml
+
+kubectl get pvc
+
+kubectl create -f k8s/deploy-service.yml
+
+kubectl create clusterrolebinding default-view --clusterrole=view --serviceaccount=default:default
+----
+
+NOTE: If the app is a WebServer, you need to apply the ingress.yml. Just verify the ports.
+
+- Run the debugger in GoLang with port 30123
+
+- Cleanup
++
+[source,shell]
+----
+kind delete cluster --name=local-debug-k8s
+----
+
+- Reference: https://github.com/setlog/debug-k8s[^]
+
+
+== Docker Debugger with Compose
+
+[source,shell]
+----
+docker-compose -f debug/docker-compose.yml up
+----
+
+- Run the debugger in GoLang with port 2345
+- References: https://golangforall.com/en/post/go-docker-delve-remote-debug.html[^]
+
+
+== Examples
+
+- https://github.com/ilmavridis/go-k8s-client/tree/4ac7edfde7242a7915c274f2a8e993dd56e3f853[^]
